@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYA BANAU</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f7f3f0; /* halka beige background */
+        }
+        .card {
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1.5rem;
+            background-color: white;
+        }
+        .btn-primary {
+            background-color: #ef4444; /* Red color */
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #dc2626;
+            transform: translateY(-2px);
+        }
+        .loader {
+            border-top-color: #ef4444;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mt-4 card p-6 sm:p-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 text-center mb-2">KYA KHAYEGA</h1>
+        <p class="text-center text-gray-500 mb-8">CHAL BATA KYA HAI KITCHEN MAI, MAI JAADU DIKHATA HU</p>
+
+        <div class="mb-6">
+            <label class="block text-lg font-medium text-gray-700 mb-2">
+                TERAI PASS JO HAI LIKH DAI CHUP-CHAP {ex. ATTA, DAAL, CHINI, NAKAM, OR SINGLE HU BHI CHAL SAKTA HAI 😂}
+            </label>
+            <textarea id="ingredients" rows="4" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent outline-none transition" placeholder="rice, milk, sugar..."></textarea>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <button id="generateBtn" class="btn-primary text-white font-semibold py-3 px-8 rounded-full shadow-lg w-full sm:w-auto">
+                रेसिपी तैयार करें
+            </button>
+            
+            <div id="loadingIndicator" class="hidden mt-4 flex items-center space-x-3">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div>
+                <span class="text-red-600 font-medium">AJ KHANA TERA BHAI SET KAREGA...</span>
+            </div>
+            <p id="errorBox" class="text-red-500 hidden mt-4 font-semibold"></p>
+        </div>
+
+        <div id="recipeOutput" class="mt-10 pt-6 border-t border-gray-200 hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4" id="outputHeader">
+                💡 TERAI LIYA SUGGEST KIYA HAI PYAR SAI 😍
+            </h2>
+            <div id="recipeContent" class="prose max-w-none text-gray-700 leading-relaxed">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const apiKey = "AIzaSyAEtLV55mMB3_PX5Ln3BFkdv8Dg3sApPyU"; //
+        const modelName = "gemini-1.5-flash"; // Stable version
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+        const ingredientsInput = document.getElementById('ingredients');
+        const generateBtn = document.getElementById('generateBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const recipeOutput = document.getElementById('recipeOutput');
+        const recipeContent = document.getElementById('recipeContent');
+        const errorBox = document.getElementById('errorBox');
+
+        generateBtn.addEventListener('click', async () => {
+            const ingredients = ingredientsInput.value.trim();
+            if (!ingredients) {
+                alert("Pehle kuch items toh likho!");
+                return;
+            }
+
+            // Reset UI
+            errorBox.classList.add('hidden');
+            recipeOutput.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            generateBtn.disabled = true;
+
+            const prompt = `I have these ingredients: ${ingredients}. Suggest a simple and tasty Indian recipe I can make. Give the recipe name and short steps in Hinglish.`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    let recipeText = data.candidates[0].content.parts[0].text;
+                    // Basic formatting for better look
+                    recipeContent.innerHTML = recipeText.replace(/\n/g, '<br>');
+                    recipeOutput.classList.remove('hidden');
+                } else {
+                    throw new Error("Invalid response format");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                errorBox.innerText = "Error: Network issue ya API problem. Console (F12) check karein.";
+                errorBox.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
